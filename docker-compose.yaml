@@ -1,0 +1,19 @@
+services:
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass 1q2w3e4r
+    volumes: 
+      - cache:/data
+volumes:
+  cache:
+    driver: local
+
+webcrawler:
+  image: webcrawler:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: always
