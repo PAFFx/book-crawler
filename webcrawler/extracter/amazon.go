@@ -1,9 +1,17 @@
 package extracter
 
 import (
-	"fmt"
+	"book-search/webcrawler/models"
 )
 
-func ExtractAmazonHtml(html string) {
-	fmt.Println("Hello")
+type AmazonExtracter struct{}
+
+func (a AmazonExtracter) IsValidBookPage(html string) bool {
+	// Implement logic to check if the HTML is a valid Amazon book page
+	return false
+}
+
+func (a AmazonExtracter) Extract(html string) (*models.Book, error) {
+	// Implement logic to extract book information from Amazon HTML
+	return &models.Book{}, nil
 }
