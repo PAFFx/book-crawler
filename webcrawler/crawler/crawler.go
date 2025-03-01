@@ -3,6 +3,7 @@ package crawler
 import (
 	"log"
 	"slices"
+	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/queue"
@@ -28,6 +29,15 @@ func Crawl(seedURLs []string) error {
 		colly.Async(true),
 	)
 
+	c.SetRequestTimeout(10 * time.Second)
+
+	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
+		Parallelism: 4, // Concurrent request limit is not the same as the number of crawler consumer threads
+		RandomDelay: 5 * time.Second,
+		Delay:       1 * time.Second,
+	})
+
 	err = c.SetStorage(storage)
 	if err != nil {
 		return err
@@ -38,13 +48,8 @@ func Crawl(seedURLs []string) error {
 		return err
 	}
 
-	c.OnRequest(func(r *colly.Request) {
-		log.Println("Visiting", r.URL.String())
-	})
-
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		if slices.Contains(allowedDomains, e.Request.URL.Host) {
-			log.Println("Adding URL to queue:", e.Request.AbsoluteURL(e.Attr("href")))
 			err = q.AddURL(e.Request.AbsoluteURL(e.Attr("href")))
 			if err != nil {
 				log.Println("Error adding URL to queue:", err)
@@ -52,8 +57,8 @@ func Crawl(seedURLs []string) error {
 		}
 	})
 
-	c.OnResponse(func(r *colly.Response) {
-		log.Println("Visited", r.Request.URL.String(), "with status", r.StatusCode)
+	c.OnError(func(r *colly.Response, err error) {
+		log.Println("Error visiting", r.Request.URL.String(), "with status", r.StatusCode)
 	})
 
 	for _, url := range seedURLs {
@@ -62,8 +67,17 @@ func Crawl(seedURLs []string) error {
 		}
 	}
 
-	if err = q.Run(c); err != nil {
-		return err
+	for {
+		// Handle the queue with async requests,
+		// wait for all requests to complete and check if the queue is empty
+		if err = q.Run(c); err != nil {
+			return err
+		}
+		c.Wait()
+		if q.IsEmpty() {
+			log.Println("Crawl completed, queue is empty")
+			break
+		}
 	}
 
 	return nil
