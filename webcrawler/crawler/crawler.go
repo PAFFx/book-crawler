@@ -21,7 +21,10 @@ func Crawl(seedURLs []string) error {
 		return err
 	}
 
-	storage := redis.GetStorage()
+	storage, err := redis.GetStorage()
+	if err != nil {
+		return err
+	}
 
 	bar := NewCrawlerProgressBar()
 

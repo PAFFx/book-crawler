@@ -1,32 +1,36 @@
 package redis
 
 import (
+	"log"
+	"sync"
+
 	"github.com/gocolly/redisstorage"
 
 	"book-search/webcrawler/config"
 )
 
-var storage *redisstorage.Storage
+var once sync.Once
+var instance *redisstorage.Storage
 
-func InitStorage() error {
+func GetStorage() (*redisstorage.Storage, error) {
 	env, err := config.GetEnv()
 	if err != nil {
-		return err
-	}
-	storage = &redisstorage.Storage{
-		Address:  env.RedisHost,
-		Password: env.RedisPassword,
-		DB:       env.RedisDB,
-		Prefix:   "webcrawler:",
+		return nil, err
 	}
 
-	return nil
-}
+	once.Do(func() {
+		log.Println("Initializing Redis storage backend")
+		instance = &redisstorage.Storage{
+			Address:  env.RedisHost,
+			Password: env.RedisPassword,
+			DB:       env.RedisDB,
+			Prefix:   "webcrawler:",
+		}
+	})
 
-func GetStorage() *redisstorage.Storage {
-	return storage
+	return instance, nil
 }
 
 func CloseStorageClient() error {
-	return storage.Client.Close()
+	return instance.Client.Close()
 }
