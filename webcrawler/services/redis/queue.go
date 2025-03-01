@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"log"
 
 	"github.com/redis/go-redis/v9"
 
@@ -10,39 +9,55 @@ import (
 )
 
 var redisClient *redis.Client
-var env *config.EnvVariables
 
 func InitRedisClient(ctx context.Context) error {
-	if env == nil {
-		var err error
-		env, err = config.GetEnv()
-		if err != nil {
-			log.Fatalf("Error getting environment variables: %v", err)
-		}
+	env, err := config.GetEnv()
+	if err != nil {
+		return err
 	}
+
 	redisClient = redis.NewClient(&redis.Options{
 		Addr:     env.RedisHost,
 		Password: env.RedisPassword,
 		DB:       env.RedisDB,
 	})
 
-	_, err := redisClient.Ping(ctx).Result()
+	_, err = redisClient.Ping(ctx).Result()
 	return err
 }
 
-func PushURLQueue(url string) {
-	ctx := context.Background()
-	err := redisClient.RPush(ctx, "urlQueue", url).Err()
-	if err != nil {
-		panic(err)
-	}
+func CloseRedisClient() error {
+	return redisClient.Close()
 }
 
-func PopURLQueue() string {
+func PushURLQueue(url string) error {
+	ctx := context.Background()
+	return redisClient.RPush(ctx, "urlQueue", url).Err()
+}
+
+func PushMultipleURLQueue(urls []string) error {
+	ctx := context.Background()
+	return redisClient.RPush(ctx, "urlQueue", urls).Err()
+}
+
+func PopURLQueue() (string, error) {
 	ctx := context.Background()
 	url, err := redisClient.LPop(ctx, "urlQueue").Result()
-	if err != nil {
-		panic(err)
-	}
-	return url
+	return url, err
+}
+
+func PopMultipleURLQueue(count int) ([]string, error) {
+	ctx := context.Background()
+	urls, err := redisClient.LPopCount(ctx, "urlQueue", count).Result()
+	return urls, err
+}
+
+func IsURLQueueEmpty() bool {
+	ctx := context.Background()
+	return redisClient.LLen(ctx, "urlQueue").Val() == 0
+}
+
+func GetURLQueueLength() int64 {
+	ctx := context.Background()
+	return redisClient.LLen(ctx, "urlQueue").Val()
 }

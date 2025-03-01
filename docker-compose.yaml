@@ -10,10 +10,3 @@ services:
 volumes:
   cache:
     driver: local
-
-webcrawler:
-  image: webcrawler:latest
-  build:
-    context: .
-    dockerfile: Dockerfile
-  restart: always
