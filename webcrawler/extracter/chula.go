@@ -20,14 +20,30 @@ func (c ChulaExtracter) IsValidBookPage(url string, html string) bool {
 		if err != nil {
 			return false
 		}
-		title := doc.Find(".product-name").Text()
-		if title == "" {
-			return false
+		description := strings.TrimSpace(doc.Find("h2:contains('รายละเอียดสินค้า')").Next().Text())
+		authors := strings.TrimSpace(doc.Find(".detail-author").Text())
+		authors = strings.Replace(authors, "ผู้แต่ง :", "", -1)
+		isbn := doc.Find("p:contains('ISBN :')").Text()
+		// fmt.Println(isbn)
+		// fmt.Println("----------")
+		// fmt.Println(authors)
+		// fmt.Println("----------")
+		// fmt.Println(description)
+		// fmt.Println("----------")
+		// fmt.Println("----------")
+		// fmt.Println("----------")
+
+		if strings.HasPrefix(isbn, "ISBN :") {
+			isbn = strings.TrimSpace(strings.Replace(isbn, "ISBN :", "", -1))
 		}
-		fmt.Println("True")
-		return true
+
+		if description != "" && authors != "" && isbn != "" {
+			fmt.Println("True")
+			return true
+		}
+		fmt.Println("False")
+		return false
 	}
-	fmt.Println("False")
 	return false
 }
 
@@ -45,7 +61,7 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 	authors := strings.TrimSpace(doc.Find(".detail-author").Text())
 	authors = strings.Replace(authors, "ผู้แต่ง :", "", -1)
 	// Extract ISBN
-	isbn := doc.Find("li:contains('ISBN')").Text()
+	isbn := doc.Find("p:contains('ISBN :')").Text()
 	if strings.HasPrefix(isbn, "ISBN :") {
 		isbn = strings.TrimSpace(strings.Replace(isbn, "ISBN :", "", -1))
 	}
@@ -63,12 +79,12 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 	}
 
 	// Create a new Book instance
-	fmt.Println(c.ProductURL)
-	fmt.Println(c.ImageURL)
-	fmt.Println(title)
-	fmt.Println(authors)
-	fmt.Println(isbn)
-	fmt.Println(description)
+	// fmt.Println(c.ProductURL)
+	// fmt.Println(c.ImageURL)
+	// fmt.Println(title)
+	// fmt.Println(authors)
+	// fmt.Println(isbn)
+	// fmt.Println(description)
 	book := &models.Book{
 		Title:       title,
 		Authors:     []string{authors},
