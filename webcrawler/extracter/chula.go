@@ -5,5 +5,5 @@ import (
 )
 
 func ChulaExtracter(html string) {
-	fmt.Println("Hello")
+	fmt.Println("test chula extracter")
 }
