@@ -6,7 +6,7 @@ import (
 
 type AmazonExtracter struct{}
 
-func (a AmazonExtracter) IsValidBookPage(html string) bool {
+func (a AmazonExtracter) IsValidBookPage(url string, html string) bool {
 	// Implement logic to check if the HTML is a valid Amazon book page
 	return false
 }

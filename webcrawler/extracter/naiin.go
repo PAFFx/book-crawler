@@ -6,7 +6,7 @@ import (
 
 type NaiinExtracter struct{}
 
-func (n NaiinExtracter) IsValidBookPage(html string) bool {
+func (n NaiinExtracter) IsValidBookPage(url string, html string) bool {
 	// Implement logic to check if the HTML is a valid Naiin book page
 	return false
 }

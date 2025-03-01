@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"book-search/webcrawler/crawler"
@@ -9,29 +8,19 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-
 	// Init services
-	if err := redis.InitRedisClient(ctx); err != nil {
-		log.Fatal(err)
-	}
-	defer redis.CloseRedisClient()
-	log.Println("Redis client initialized")
-
 	if err := redis.InitStorage(); err != nil {
 		log.Fatal(err)
 	}
-	defer redis.CloseStorageClient()
-	log.Println("Redis storage initialized")
+	log.Println("Redis storage backend initialized")
 
-	seedURLs := []string{"https://www.naiin.com/"}
+	seedURLs := []string{
+		"https://www.chulabook.com",
+		"https://www.naiin.com",
+	}
 
-	go func() {
-		err := crawler.Crawl(seedURLs)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	select {}
+	err := crawler.Crawl(seedURLs)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

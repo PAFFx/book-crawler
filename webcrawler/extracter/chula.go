@@ -6,7 +6,7 @@ import (
 
 type ChulaExtracter struct{}
 
-func (c ChulaExtracter) IsValidBookPage(html string) bool {
+func (c ChulaExtracter) IsValidBookPage(url string, html string) bool {
 	// Implement logic to check if the HTML is a valid Chula book page
 	return false
 }
