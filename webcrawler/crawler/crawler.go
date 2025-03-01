@@ -23,6 +23,8 @@ func Crawl(seedURLs []string) error {
 
 	storage := redis.GetStorage()
 
+	bar := NewCrawlerProgressBar()
+
 	c := colly.NewCollector(
 		colly.AllowedDomains(allowedDomains...),
 		colly.UserAgent(env.CrawlerUserAgent),
@@ -57,6 +59,13 @@ func Crawl(seedURLs []string) error {
 		}
 	})
 
+	c.OnResponse(func(r *colly.Response) {
+		if r.StatusCode == 200 {
+			_ = bar.Add(1)
+			bar.AddDetail("Visited " + r.Request.URL.String())
+		}
+	})
+
 	c.OnError(func(r *colly.Response, err error) {
 		log.Println("Error visiting", r.Request.URL.String(), "with status", r.StatusCode)
 	})
@@ -79,6 +88,8 @@ func Crawl(seedURLs []string) error {
 			break
 		}
 	}
+
+	bar.Finish()
 
 	return nil
 }

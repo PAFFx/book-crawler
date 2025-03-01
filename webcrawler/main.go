@@ -14,7 +14,10 @@ func main() {
 	}
 	log.Println("Redis storage backend initialized")
 
-	seedURLs := []string{"https://www.chulabook.com"}
+	seedURLs := []string{
+		"https://www.chulabook.com",
+		"https://www.naiin.com",
+	}
 
 	err := crawler.Crawl(seedURLs)
 	if err != nil {
