@@ -2,48 +2,69 @@ package crawler
 
 import (
 	"log"
+	"slices"
 
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/queue"
 
 	"book-search/webcrawler/config"
+	"book-search/webcrawler/services/redis"
 )
 
-var env *config.EnvVariables
+var allowedDomains = []string{"www.naiin.com", "www.chulabook.com", "www.amazon.com"}
 
-func Crawl(url string, htmlStream chan<- string) {
-	if env == nil {
-		var err error
-		env, err = config.GetEnv()
-		if err != nil {
-			log.Fatalf("Error getting environment variables: %v", err)
-		}
-
-		if env.CrawlerThreads <= 0 {
-			log.Fatalf("Crawler threads must be greater than 0")
-		}
-
-		if env.CrawlerUserAgent == "" {
-			log.Fatalf("Crawler user agent must be set")
-		}
+func Crawl(seedURLs []string) error {
+	// get and check env
+	env, err := config.GetEnv()
+	if err != nil {
+		return err
 	}
 
-	q, _ := queue.New(env.CrawlerThreads, &queue.InMemoryQueueStorage{MaxSize: 10000})
+	storage := redis.GetStorage()
+
 	c := colly.NewCollector(
-		//colly.AllowedDomains("naiin", "chula", "amazon"),
+		colly.AllowedDomains(allowedDomains...),
 		colly.UserAgent(env.CrawlerUserAgent),
+		colly.Async(true),
 	)
 
+	err = c.SetStorage(storage)
+	if err != nil {
+		return err
+	}
+
+	q, err := queue.New(env.CrawlerThreads, storage)
+	if err != nil {
+		return err
+	}
+
+	c.OnRequest(func(r *colly.Request) {
+		log.Println("Visiting", r.URL.String())
+	})
+
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		//fmt.Println(e.Attr("href"))
-		q.AddURL(e.Attr("href"))
+		if slices.Contains(allowedDomains, e.Request.URL.Host) {
+			log.Println("Adding URL to queue:", e.Request.AbsoluteURL(e.Attr("href")))
+			err = q.AddURL(e.Request.AbsoluteURL(e.Attr("href")))
+			if err != nil {
+				log.Println("Error adding URL to queue:", err)
+			}
+		}
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		htmlStream <- string(r.Body) // Send the HTML content to the channel
+		log.Println("Visited", r.Request.URL.String(), "with status", r.StatusCode)
 	})
 
-	q.AddURL(url)
-	q.Run(c)
-	close(htmlStream) // Close the channel when done
+	for _, url := range seedURLs {
+		if err = q.AddURL(url); err != nil {
+			return err
+		}
+	}
+
+	if err = q.Run(c); err != nil {
+		return err
+	}
+
+	return nil
 }

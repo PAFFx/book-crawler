@@ -1,9 +1,17 @@
 package extracter
 
 import (
-	"fmt"
+	"book-search/webcrawler/models"
 )
 
-func NaiinExtracter(html string) {
-	fmt.Println("Hello")
+type NaiinExtracter struct{}
+
+func (n NaiinExtracter) IsValidBookPage(html string) bool {
+	// Implement logic to check if the HTML is a valid Naiin book page
+	return false
+}
+
+func (n NaiinExtracter) Extract(html string) (*models.Book, error) {
+	// Implement logic to extract book information from Naiin HTML
+	return &models.Book{}, nil
 }

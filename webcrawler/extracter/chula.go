@@ -1,9 +1,11 @@
 package extracter
 
 import (
-	"fmt"
+	"book-search/webcrawler/models"
 )
 
+type ChulaExtracter struct{}
+
 func ChulaExtracter(html string) {
-	fmt.Println("test chula extracter")
+	fmt.Println("Hello")
 }
