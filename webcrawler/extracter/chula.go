@@ -4,8 +4,9 @@ import "book-search/webcrawler/models"
 
 type ChulaExtracter struct{}
 
-func (n ChulaExtracter) IsValidBookPage(html string) bool {
-	// Implement logic to check if the HTML is a valid Naiin book page
+
+func (c ChulaExtracter) IsValidBookPage(url string, html string) bool {
+	// Implement logic to check if the HTML is a valid Chula book page
 	return false
 }
 
