@@ -4,13 +4,13 @@ go 1.24.0
 
 require (
 	github.com/Netflix/go-env v0.1.2
+	github.com/PuerkitoBio/goquery v1.10.2
 	github.com/gocolly/colly v1.2.0
 	github.com/gocolly/redisstorage v0.0.0-20190812112800-1745c5e6d0ba
 	github.com/schollz/progressbar/v3 v3.18.0
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.2 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/antchfx/htmlquery v1.3.4 // indirect
 	github.com/antchfx/xmlquery v1.4.4 // indirect
