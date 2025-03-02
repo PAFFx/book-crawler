@@ -10,6 +10,7 @@ import (
 
 	"book-search/webcrawler/config"
 	"book-search/webcrawler/services/redis"
+	"book-search/webcrawler/utils"
 )
 
 var allowedDomains = []string{"www.naiin.com", "www.chulabook.com", "www.amazon.com"}
@@ -21,7 +22,10 @@ func Crawl(seedURLs []string) error {
 		return err
 	}
 
-	storage := redis.GetStorage()
+	storage, err := redis.GetStorage()
+	if err != nil {
+		return err
+	}
 
 	bar := NewCrawlerProgressBar()
 
@@ -76,6 +80,12 @@ func Crawl(seedURLs []string) error {
 		}
 	}
 
+	cleanupManager := utils.GetCleanupManager()
+	cleanupManager.Add(func() {
+		// finish bar and
+		bar.Finish()
+	})
+
 	for {
 		// Handle the queue with async requests,
 		// wait for all requests to complete and check if the queue is empty
@@ -88,8 +98,6 @@ func Crawl(seedURLs []string) error {
 			break
 		}
 	}
-
-	bar.Finish()
 
 	return nil
 }
