@@ -31,7 +31,6 @@ func Crawl(seedURLs []string) error {
 
 	c := colly.NewCollector(
 		colly.AllowedDomains(allowedDomains...),
-		colly.UserAgent(env.CrawlerUserAgent),
 		colly.Async(true),
 	)
 
@@ -53,6 +52,10 @@ func Crawl(seedURLs []string) error {
 	if err != nil {
 		return err
 	}
+
+	c.OnRequest(func(r *colly.Request) {
+		r.Headers.Set("User-Agent", config.GetRandomUserAgents())
+	})
 
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		if slices.Contains(allowedDomains, e.Request.URL.Host) {

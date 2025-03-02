@@ -7,8 +7,7 @@ import (
 )
 
 type EnvVariables struct {
-	CrawlerThreads   int    `env:"CRAWLER_THREADS,default=8"`
-	CrawlerUserAgent string `env:"CRAWLER_USER_AGENT,default=BOOK-SEARCH-CRAWLER"`
+	CrawlerThreads int `env:"CRAWLER_THREADS,default=8"`
 
 	RedisHost     string `env:"REDIS_HOST,default=localhost:6379"`
 	RedisPassword string `env:"REDIS_PASSWORD,default=1q2w3e4r"`
