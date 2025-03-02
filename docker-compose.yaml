@@ -7,6 +7,22 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass 1q2w3e4r
     volumes: 
       - cache:/data
+  
+  minio:
+    image: minio/minio
+    restart: always
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: 1q2w3e4r
+
 volumes:
   cache:
+    driver: local
+  minio_data:
     driver: local
