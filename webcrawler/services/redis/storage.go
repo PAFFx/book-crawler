@@ -32,5 +32,11 @@ func GetStorage() (*redisstorage.Storage, error) {
 }
 
 func CloseStorageClient() error {
+	if instance == nil {
+		return nil
+	}
+
+	log.Println("Closing Redis storage client")
+
 	return instance.Client.Close()
 }
