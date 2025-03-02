@@ -1,16 +1,15 @@
 package extracter
 
 import (
-	"github.com/PuerkitoBio/goquery"
 	"book-search/webcrawler/models"
-	"strings"
-	"net/url"
 	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type ChulaExtracter struct {
-	ProductURL *url.URL
-	ImageURL   *url.URL
 }
 
 func (c ChulaExtracter) IsValidBookPage(url string, html string) bool {
@@ -24,24 +23,10 @@ func (c ChulaExtracter) IsValidBookPage(url string, html string) bool {
 		authors := strings.TrimSpace(doc.Find(".detail-author").Text())
 		authors = strings.Replace(authors, "ผู้แต่ง :", "", -1)
 		isbn := doc.Find("p:contains('ISBN :')").Text()
-		// fmt.Println(isbn)
-		// fmt.Println("----------")
-		// fmt.Println(authors)
-		// fmt.Println("----------")
-		// fmt.Println(description)
-		// fmt.Println("----------")
-		// fmt.Println("----------")
-		// fmt.Println("----------")
-
-		if strings.HasPrefix(isbn, "ISBN :") {
-			isbn = strings.TrimSpace(strings.Replace(isbn, "ISBN :", "", -1))
-		}
 
 		if description != "" && authors != "" && isbn != "" {
-			fmt.Println("True")
 			return true
 		}
-		fmt.Println("False")
 		return false
 	}
 	return false
@@ -67,31 +52,41 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 	}
 
 	// Extract product URL
-	productURL, exists := doc.Find(`meta[property="og:url"]`).Attr("content")
+	var productURL *url.URL
+	P_URL, exists := doc.Find(`meta[property="og:url"]`).Attr("content")
 	if exists {
-		c.ProductURL, _ = url.Parse(productURL)
+		parsedProductURL, err := url.Parse(P_URL)
+		if err != nil {
+			return nil, err
+		}
+		productURL = parsedProductURL
 	}
 
 	// Extract image URL
-	imageURL, exists := doc.Find(`meta[name="twitter:image"]`).Attr("content")
+	var imageURL *url.URL
+	Img_URL, exists := doc.Find(`meta[name="twitter:image"]`).Attr("content")
 	if exists {
-		c.ImageURL, _ = url.Parse(imageURL)
+		parsedImageURL, err := url.Parse(Img_URL)
+		if err != nil {
+			return nil, err
+		}
+		imageURL = parsedImageURL
 	}
 
 	// Create a new Book instance
-	// fmt.Println(c.ProductURL)
-	// fmt.Println(c.ImageURL)
-	// fmt.Println(title)
-	// fmt.Println(authors)
-	// fmt.Println(isbn)
-	// fmt.Println(description)
+	fmt.Println(productURL)
+	fmt.Println(imageURL)
+	fmt.Println(title)
+	fmt.Println(authors)
+	fmt.Println(isbn)
+	fmt.Println(description)
 	book := &models.Book{
 		Title:       title,
 		Authors:     []string{authors},
 		ISBN:        isbn,
 		Description: description,
-		ProductURL:  c.ProductURL,
-		ImageURL:    c.ImageURL,
+		ProductURL:  productURL,
+		ImageURL:    imageURL,
 	}
 
 	return book, nil
