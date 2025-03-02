@@ -2,7 +2,6 @@ package extracter
 
 import (
 	"book-search/webcrawler/models"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -74,12 +73,6 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 	}
 
 	// Create a new Book instance
-	fmt.Println(productURL)
-	fmt.Println(imageURL)
-	fmt.Println(title)
-	fmt.Println(authors)
-	fmt.Println(isbn)
-	fmt.Println(description)
 	book := &models.Book{
 		Title:       title,
 		Authors:     []string{authors},
