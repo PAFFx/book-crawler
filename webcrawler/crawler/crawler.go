@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"context"
 	"log"
 	"slices"
 	"time"
@@ -9,13 +10,15 @@ import (
 	"github.com/gocolly/colly/queue"
 
 	"book-search/webcrawler/config"
+	"book-search/webcrawler/extracter"
+	"book-search/webcrawler/services/minio"
 	"book-search/webcrawler/services/redis"
 	"book-search/webcrawler/utils"
 )
 
 var allowedDomains = []string{"www.naiin.com", "www.chulabook.com", "www.amazon.com"}
 
-func Crawl(seedURLs []string) error {
+func Crawl(ctx context.Context, seedURLs []string) error {
 	// get and check env
 	env, err := config.GetEnv()
 	if err != nil {
@@ -38,7 +41,7 @@ func Crawl(seedURLs []string) error {
 
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
-		Parallelism: 4, // Concurrent request limit is not the same as the number of crawler consumer threads
+		Parallelism: 6, // Concurrent request limit is not the same as the number of crawler consumer threads
 		RandomDelay: 5 * time.Second,
 		Delay:       1 * time.Second,
 	})
@@ -69,7 +72,21 @@ func Crawl(seedURLs []string) error {
 	c.OnResponse(func(r *colly.Response) {
 		if r.StatusCode == 200 {
 			_ = bar.Add(1)
-			bar.AddDetail("Visited " + r.Request.URL.String())
+			bar.Describe("Crawled site: " + r.Request.URL.String())
+
+			// TODO: Check if the content is unique by comparing page hash first to save bandwidth
+			e := extracter.GetExtracter(r.Request.URL.Host)
+			if e != nil && e.IsValidBookPage(r.Request.URL.String(), string(r.Body)) {
+				_, err := e.Extract(string(r.Body)) // TODO: Store the book data
+				if err != nil {
+					log.Println("Error extracting book:", err)
+				}
+
+				_, err = minio.StoreHTML(ctx, string(r.Body))
+				if err != nil {
+					log.Printf("Error storing HTML (URL: %s): %v\n", r.Request.URL.String(), err)
+				}
+			}
 		}
 	})
 

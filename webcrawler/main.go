@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -31,10 +32,10 @@ func main() {
 
 	seedURLs := []string{
 		"https://www.chulabook.com",
-		"https://www.naiin.com",
+		//"https://www.naiin.com",
 	}
 
-	err := crawler.Crawl(seedURLs)
+	err := crawler.Crawl(context.Background(), seedURLs)
 	if err != nil {
 		log.Fatal(err)
 	}
