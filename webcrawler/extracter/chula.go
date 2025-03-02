@@ -44,11 +44,10 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 	// Extract authors
 	authors := strings.TrimSpace(doc.Find(".detail-author").Text())
 	authors = strings.Replace(authors, "ผู้แต่ง :", "", -1)
+	
 	// Extract ISBN
 	isbn := doc.Find("p:contains('ISBN :')").Text()
-	if strings.HasPrefix(isbn, "ISBN :") {
-		isbn = strings.TrimSpace(strings.Replace(isbn, "ISBN :", "", -1))
-	}
+
 
 	// Extract product URL
 	var productURL *url.URL
