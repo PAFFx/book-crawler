@@ -8,36 +8,40 @@ import (
 
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/queue"
+	"github.com/gocolly/redisstorage"
+	"gorm.io/gorm"
 
 	"book-search/webcrawler/config"
 	"book-search/webcrawler/extracter"
-	"book-search/webcrawler/services/minio"
-	"book-search/webcrawler/services/redis"
+	"book-search/webcrawler/services/database"
+	"book-search/webcrawler/services/htmlStore"
 	"book-search/webcrawler/utils"
+
+	"github.com/minio/minio-go/v7"
 )
 
 var allowedDomains = []string{"www.naiin.com", "www.chulabook.com", "www.amazon.com"}
 
-func Crawl(ctx context.Context, seedURLs []string) error {
+func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreClient *minio.Client, dbClient *gorm.DB, seedURLs []string) error {
+	cleanupManager := utils.GetCleanupManager()
+
 	// get and check env
 	env, err := config.GetEnv()
 	if err != nil {
 		return err
 	}
 
-	storage, err := redis.GetStorage()
-	if err != nil {
-		return err
-	}
-
 	bar := NewCrawlerProgressBar()
+	cleanupManager.Add(func() {
+		bar.Finish()
+	})
 
 	c := colly.NewCollector(
 		colly.AllowedDomains(allowedDomains...),
 		colly.Async(true),
 	)
 
-	c.SetRequestTimeout(10 * time.Second)
+	c.SetRequestTimeout(30 * time.Second)
 
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
@@ -46,12 +50,12 @@ func Crawl(ctx context.Context, seedURLs []string) error {
 		Delay:       1 * time.Second,
 	})
 
-	err = c.SetStorage(storage)
+	err = c.SetStorage(storageClient)
 	if err != nil {
 		return err
 	}
 
-	q, err := queue.New(env.CrawlerThreads, storage)
+	q, err := queue.New(env.CrawlerThreads, storageClient)
 	if err != nil {
 		return err
 	}
@@ -71,27 +75,44 @@ func Crawl(ctx context.Context, seedURLs []string) error {
 
 	c.OnResponse(func(r *colly.Response) {
 		if r.StatusCode == 200 {
-			_ = bar.Add(1)
-			bar.Describe("Crawled site: " + r.Request.URL.String())
-
-			// TODO: Check if the content is unique by comparing page hash first to save bandwidth
 			e := extracter.GetExtracter(r.Request.URL.Host)
 			if e != nil && e.IsValidBookPage(r.Request.URL.String(), string(r.Body)) {
-				_, err := e.Extract(string(r.Body)) // TODO: Store the book data
-				if err != nil {
-					log.Println("Error extracting book:", err)
-				}
 
-				_, err = minio.StoreHTML(ctx, string(r.Body))
+				contentHash := utils.GenerateContentHash(string(r.Body))
+
+				exists, err := database.CheckBookExists(dbClient, contentHash)
 				if err != nil {
-					log.Printf("Error storing HTML (URL: %s): %v\n", r.Request.URL.String(), err)
+					log.Println("Error checking if book exists:", err)
+				}
+				if !exists {
+
+					const maxURLLength = 50
+					bar.Describe("Crawled site: " + truncateString(r.Request.URL.String(), maxURLLength))
+					_ = bar.Add(1)
+
+					book, err := e.Extract(string(r.Body))
+					if err != nil {
+						log.Println("Error extracting book:", err)
+					}
+
+					err = database.StoreBook(dbClient, book)
+					if err != nil {
+						log.Println("Error storing book:", err)
+					}
+
+					err = htmlStore.StoreHTML(ctx, htmlStoreClient, string(r.Body), contentHash)
+					if err != nil {
+						log.Printf("Error storing HTML (URL: %s): %v\n", r.Request.URL.String(), err)
+					}
 				}
 			}
 		}
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		log.Println("Error visiting", r.Request.URL.String(), "with status", r.StatusCode)
+		if r.StatusCode != 404 && r.StatusCode != 500 {
+			log.Println("Error visiting", r.Request.URL.String(), "with status", r.StatusCode)
+		}
 	})
 
 	for _, url := range seedURLs {
@@ -99,12 +120,6 @@ func Crawl(ctx context.Context, seedURLs []string) error {
 			return err
 		}
 	}
-
-	cleanupManager := utils.GetCleanupManager()
-	cleanupManager.Add(func() {
-		// finish bar and
-		bar.Finish()
-	})
 
 	for {
 		// Handle the queue with async requests,
@@ -120,4 +135,12 @@ func Crawl(ctx context.Context, seedURLs []string) error {
 	}
 
 	return nil
+}
+
+// Helper function to truncate strings to a maximum length
+func truncateString(str string, maxLength int) string {
+	if len(str) > maxLength {
+		return str[:maxLength] + "..."
+	}
+	return str
 }

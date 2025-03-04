@@ -2,6 +2,7 @@ package extracter
 
 import (
 	"book-search/webcrawler/models"
+	"book-search/webcrawler/utils"
 	"net/url"
 	"regexp"
 	"strings"
@@ -68,10 +69,11 @@ func (n NaiinExtracter) Extract(html string) (*models.Book, error) {
 	description := strings.TrimSpace(doc.Find(NAIIN_DESCRIPTION_SELECTOR).First().Text())
 
 	return &models.Book{
-		ProductURL:  productUrl,
-		ImageURL:    imageUrl,
-		Title:       title,
-		Authors:     authors,
+		HTMLHash: utils.GenerateContentHash(html),
+		URL:      productUrl.String(),
+		ImageURL: imageUrl.String(),
+		Title:    title,
+		//		Authors:     authors,
 		ISBN:        isbn,
 		Description: description,
 	}, nil

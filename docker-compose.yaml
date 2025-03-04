@@ -21,8 +21,32 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: 1q2w3e4r
 
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 1q2w3e4r
+      POSTGRES_DB: book_search
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DEFAULT_DB_HOST: postgres
+      ADMINER_DEFAULT_DB_NAME: book_search
+
 volumes:
   cache:
     driver: local
   minio_data:
+    driver: local
+  postgres_data:
     driver: local
