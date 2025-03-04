@@ -37,7 +37,7 @@ func (b BooktopiaExtracter) IsValidBookPage(url string, html string) bool {
 	return strings.ToLower(productType) == "book"
 }
 
-func (b BooktopiaExtracter) Extract(html string) (*models.Book, error) {
+func (b BooktopiaExtracter) Extract(html string) (*models.BookWithAuthors, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, err
@@ -81,13 +81,24 @@ func (b BooktopiaExtracter) Extract(html string) (*models.Book, error) {
 
 	contentHash := utils.GenerateContentHash(html)
 
-	return &models.Book{
-		HTMLHash: contentHash,
-		URL:      productUrl.String(),
-		ImageURL: imageUrl.String(),
-		Title:    title,
-		//Authors:     authors,
+	book := &models.Book{
+		HTMLHash:    contentHash,
+		Title:       title,
 		ISBN:        isbn,
 		Description: description,
+	}
+
+	// Handle URLs
+	if productUrl != nil {
+		book.URL = productUrl.String()
+	}
+
+	if imageUrl != nil {
+		book.ImageURL = imageUrl.String()
+	}
+
+	return &models.BookWithAuthors{
+		Book:    book,
+		Authors: authors,
 	}, nil
 }

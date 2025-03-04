@@ -122,7 +122,8 @@ func TestNaiinExtracter_Extract(t *testing.T) {
 
 			// os.WriteFile(fmt.Sprintf("%s.html", tt.name), []byte(html), 0644)
 
-			book, errr := a.Extract(string(html))
+			bookWithAuthors, errr := a.Extract(string(html))
+			book := bookWithAuthors.Book
 			if errr != nil {
 				t.Errorf("NaiinExtracter.Extract() error = %v", errr)
 			}
@@ -130,7 +131,7 @@ func TestNaiinExtracter_Extract(t *testing.T) {
 			assert.NotEmpty(t, book.URL)
 			assert.NotEmpty(t, book.ImageURL)
 			assert.NotEmpty(t, book.Title)
-			//			assert.NotEmpty(t, book.Authors)
+			assert.NotEmpty(t, bookWithAuthors.Authors)
 			assert.NotEmpty(t, book.ISBN)
 			assert.NotEmpty(t, book.Description)
 

@@ -1,8 +1,6 @@
 package database
 
 import (
-	"errors"
-
 	"book-search/webcrawler/models"
 
 	"gorm.io/driver/postgres"
@@ -30,7 +28,7 @@ func GetDBClient() (*gorm.DB, error) {
 }
 
 func migrateTables(db *gorm.DB) error {
-	return db.AutoMigrate(&models.Book{})
+	return db.AutoMigrate(&models.Book{}, &models.Author{})
 }
 
 func CloseDBClient(db *gorm.DB) error {
@@ -40,27 +38,4 @@ func CloseDBClient(db *gorm.DB) error {
 	}
 
 	return sqlDB.Close()
-}
-
-func StoreBook(db *gorm.DB, book *models.Book) error {
-	return db.Create(&book).Error
-}
-
-func CheckBookExists(db *gorm.DB, htmlHash string) (bool, error) {
-	if !db.Migrator().HasTable(&models.Book{}) {
-		return false, errors.New("table does not exist")
-	}
-
-	var book models.Book
-	var exists bool
-	err := db.Model(book).
-		Select("count(*) > 0").
-		Where("html_hash = ?", htmlHash).
-		Find(&exists).
-		Error
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
 }

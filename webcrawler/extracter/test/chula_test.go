@@ -25,7 +25,8 @@ func TestExtract(t *testing.T) {
 	if !extracter.IsValidBookPage(url, string(html)) {
 		fmt.Println("Not a valid book page")
 	}
-	book, err := extracter.Extract(string(html))
+	bookWithAuthors, err := extracter.Extract(string(html))
+	book := bookWithAuthors.Book
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

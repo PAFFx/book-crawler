@@ -35,7 +35,7 @@ func (n NaiinExtracter) IsValidBookPage(url string, html string) bool {
 	return strings.ToLower(productType) == "book"
 }
 
-func (n NaiinExtracter) Extract(html string) (*models.Book, error) {
+func (n NaiinExtracter) Extract(html string) (*models.BookWithAuthors, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, err
@@ -68,13 +68,17 @@ func (n NaiinExtracter) Extract(html string) (*models.Book, error) {
 
 	description := strings.TrimSpace(doc.Find(NAIIN_DESCRIPTION_SELECTOR).First().Text())
 
-	return &models.Book{
-		HTMLHash: utils.GenerateContentHash(html),
-		URL:      productUrl.String(),
-		ImageURL: imageUrl.String(),
-		Title:    title,
-		//		Authors:     authors,
+	book := &models.Book{
+		HTMLHash:    utils.GenerateContentHash(html),
+		URL:         productUrl.String(),
+		ImageURL:    imageUrl.String(),
+		Title:       title,
 		ISBN:        isbn,
 		Description: description,
+	}
+
+	return &models.BookWithAuthors{
+		Book:    book,
+		Authors: authors,
 	}, nil
 }

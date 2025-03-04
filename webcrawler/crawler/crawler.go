@@ -90,14 +90,17 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 					_ = bar.Add(1)
 					bar.Describe("Crawled site: " + truncateString(r.Request.URL.String(), maxURLLength))
 
-					book, err := e.Extract(string(r.Body))
+					bookWithAuthors, err := e.Extract(string(r.Body))
 					if err != nil {
 						log.Println("Error extracting book:", err)
 					}
 
-					err = database.StoreBook(dbClient, book)
+					// Set HTMLHash for the book
+					bookWithAuthors.Book.HTMLHash = contentHash
+
+					err = database.StoreBookWithAuthors(dbClient, bookWithAuthors)
 					if err != nil {
-						log.Println("Error storing book:", err)
+						log.Println("Error storing book with authors:", err)
 					}
 
 					err = htmlStore.StoreHTML(ctx, htmlStoreClient, string(r.Body), contentHash)
