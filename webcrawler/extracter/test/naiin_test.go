@@ -1,9 +1,10 @@
-package extracter
+package extracter_test
 
 import (
-	"book-search/webcrawler/config"
 	// "encoding/json"
 	// "fmt"
+	"book-search/webcrawler/config"
+	"book-search/webcrawler/extracter"
 	"io"
 
 	"net/http"
@@ -15,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBooktopiaxtracter_IsValidBookPage(t *testing.T) {
+func TestNaiinExtracter_IsValidBookPage(t *testing.T) {
 	tests := []struct {
 		name string
 		url  string
@@ -23,47 +24,27 @@ func TestBooktopiaxtracter_IsValidBookPage(t *testing.T) {
 	}{
 		{
 			name: "Valid 1",
-			url:  "https://www.booktopia.com.au/jurassic-park-michael-crichton/book/9780345538987.html",
+			url:  "https://www.naiin.com/product/detail/639369",
 			want: true,
 		},
 		{
 			name: "Valid 2",
-			url:  "https://www.booktopia.com.au/more-than-just-a-dog-simon-wooler/book/9780008707484.html",
-			want: true,
-		},
-		{
-			name: "Valid 3",
-			url:  "https://www.booktopia.com.au/the-c-programming-language-brian-kernighan/book/9780131103627.html",
+			url:  "https://www.naiin.com/product/detail/508064",
 			want: true,
 		},
 		{
 			name: "Invalid (main page)",
-			url:  "https://www.booktopia.com.au/",
+			url:  "https://www.naiin.com/books/",
 			want: false,
 		},
 		{
-			name: "Invalid (fiction page)",
-			url:  "https://www.booktopia.com.au/books/fiction/cF-p1.html",
+			name: "Invalid (category page)",
+			url:  "https://www.naiin.com/category?category_1_code=28&product_type_id=1",
 			want: false,
 		},
 		{
-			name: "Invalid (non-fiction page)",
-			url:  "https://www.booktopia.com.au/books/non-fiction/cN-p1.html",
-			want: false,
-		},
-		{
-			name: "Invalid (textbook page)",
-			url:  "https://www.booktopia.com.au/books/text-books/higher-education-vocational-textbooks/cXA-p1.html",
-			want: false,
-		},
-		{
-			name: "Invalid (textbook subject page)",
-			url:  "https://www.booktopia.com.au/books/text-books/higher-education-vocational-textbooks/language-textbooks/cXAK-p1.html",
-			want: false,
-		},
-		{
-			name: "Invalid (stationery page)",
-			url:  "https://www.booktopia.com.au/leuchtturm1917-notebook-medium-a5-hardcover-lined-black-leuchtturm1917/stationery/4004117258107.html",
+			name: "Invalid (toy page)",
+			url:  "https://www.naiin.com/product/detail/603593",
 			want: false,
 		},
 	}
@@ -72,7 +53,7 @@ func TestBooktopiaxtracter_IsValidBookPage(t *testing.T) {
 	client := http.Client{
 		Jar: jar,
 	}
-	b := BooktopiaExtracter{}
+	a := extracter.NaiinExtracter{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, tt.url, nil)
@@ -91,30 +72,30 @@ func TestBooktopiaxtracter_IsValidBookPage(t *testing.T) {
 
 			// os.WriteFile(fmt.Sprintf("%s.html", tt.name), []byte(html), 0644)
 
-			if got := b.IsValidBookPage(tt.url, string(html)); got != tt.want {
+			if got := a.IsValidBookPage(tt.url, string(html)); got != tt.want {
 				t.Errorf("NaiinExtracter.IsValidBookPage() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestBooktopiaExtracter_Extract(t *testing.T) {
+func TestNaiinExtracter_Extract(t *testing.T) {
 	tests := []struct {
 		name string
 		url  string
 	}{
 		{
 			name: "Book 1",
-			url:  "https://www.booktopia.com.au/jurassic-park-michael-crichton/book/9780345538987.html",
+			url:  "https://www.naiin.com/product/detail/639369",
 		},
 		{
 			name: "Book 2",
-			url:  "https://www.booktopia.com.au/more-than-just-a-dog-simon-wooler/book/9780008707484.html",
+			url:  "https://www.naiin.com/product/detail/508064",
 		},
 
 		{
 			name: "Book 3",
-			url:  "https://www.booktopia.com.au/the-c-programming-language-brian-kernighan/book/9780131103627.html",
+			url:  "https://www.naiin.com/product/detail/485046",
 		},
 	}
 
@@ -122,7 +103,7 @@ func TestBooktopiaExtracter_Extract(t *testing.T) {
 	client := http.Client{
 		Jar: jar,
 	}
-	b := BooktopiaExtracter{}
+	a := extracter.NaiinExtracter{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, tt.url, nil)
@@ -141,7 +122,7 @@ func TestBooktopiaExtracter_Extract(t *testing.T) {
 
 			// os.WriteFile(fmt.Sprintf("%s.html", tt.name), []byte(html), 0644)
 
-			book, errr := b.Extract(string(html))
+			book, errr := a.Extract(string(html))
 			if errr != nil {
 				t.Errorf("NaiinExtracter.Extract() error = %v", errr)
 			}
@@ -149,7 +130,7 @@ func TestBooktopiaExtracter_Extract(t *testing.T) {
 			assert.NotEmpty(t, book.URL)
 			assert.NotEmpty(t, book.ImageURL)
 			assert.NotEmpty(t, book.Title)
-			//assert.NotEmpty(t, book.Authors)
+			//			assert.NotEmpty(t, book.Authors)
 			assert.NotEmpty(t, book.ISBN)
 			assert.NotEmpty(t, book.Description)
 
