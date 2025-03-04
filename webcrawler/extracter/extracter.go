@@ -14,12 +14,16 @@ type Extracter interface {
 }
 
 func GetExtracter(hostUrl string) Extracter {
-	if strings.Contains(hostUrl, "amazon.com") {
-		return &AmazonExtracter{}
+	if strings.Contains(hostUrl, "naiin.com") {
+		return &NaiinExtracter{}
 	}
 
 	if strings.Contains(hostUrl, "chulabook.com") {
 		return &ChulaExtracter{}
+	}
+
+	if strings.Contains(hostUrl, "booktopia.com.au") {
+		return &BooktopiaExtracter{}
 	}
 	return nil
 }
