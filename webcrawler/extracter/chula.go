@@ -22,9 +22,8 @@ func (c ChulaExtracter) IsValidBookPage(url string, html string) bool {
 		description := strings.TrimSpace(doc.Find("h2:contains('รายละเอียดสินค้า')").Next().Text())
 		authors := strings.TrimSpace(doc.Find(".detail-author").Text())
 		authors = strings.Replace(authors, "ผู้แต่ง :", "", -1)
-		isbn := doc.Find("p:contains('ISBN :')").Text()
 
-		if description != "" && authors != "" && isbn != "" {
+		if description != "" && authors != "" {
 			return true
 		}
 		return false

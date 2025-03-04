@@ -30,6 +30,7 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 	}
 
 	bar := NewCrawlerProgressBar()
+	_ = bar.Add(0)
 	cleanupManager.Add(func() {
 		bar.Finish()
 	})
@@ -73,6 +74,7 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 
 	c.OnResponse(func(r *colly.Response) {
 		if r.StatusCode == 200 {
+			bar.AddDetail("Visited: " + r.Request.URL.String())
 			e := extracter.GetExtracter(r.Request.URL.Host)
 			if e != nil && e.IsValidBookPage(r.Request.URL.String(), string(r.Body)) {
 
@@ -85,8 +87,8 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 				if !exists {
 
 					const maxURLLength = 50
-					bar.Describe("Crawled site: " + truncateString(r.Request.URL.String(), maxURLLength))
 					_ = bar.Add(1)
+					bar.Describe("Crawled site: " + truncateString(r.Request.URL.String(), maxURLLength))
 
 					book, err := e.Extract(string(r.Body))
 					if err != nil {

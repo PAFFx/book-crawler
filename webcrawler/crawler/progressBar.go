@@ -9,6 +9,7 @@ func NewCrawlerProgressBar() *progressbar.ProgressBar {
 	bar := progressbar.NewOptions(-1,
 		progressbar.OptionSetDescription("Crawling sites"),
 		progressbar.OptionShowCount(),
+		progressbar.OptionSetMaxDetailRow(1),
 		progressbar.OptionShowElapsedTimeOnFinish(),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "=",
