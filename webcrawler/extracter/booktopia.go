@@ -3,7 +3,6 @@ package extracter
 import (
 	"book-search/webcrawler/models"
 	"book-search/webcrawler/utils"
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -26,7 +25,6 @@ type BooktopiaExtracter struct{}
 func (b BooktopiaExtracter) IsValidBookPage(url string, html string) bool {
 	matched, _ := regexp.MatchString(`https://www\.booktopia\.com\.au/[^/]+/book/\d+\.html`, url)
 	if !matched {
-		log.Print("URL does not match the pattern: ", url)
 		return false
 	}
 
@@ -36,7 +34,6 @@ func (b BooktopiaExtracter) IsValidBookPage(url string, html string) bool {
 	}
 
 	productType := strings.TrimSpace(doc.Find(BOOKTOPIA_PRODUCT_TYPE_SELECTOR).First().AttrOr("content", ""))
-	log.Printf("Product type: %s", productType)
 	return strings.ToLower(productType) == "book"
 }
 

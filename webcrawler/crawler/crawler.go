@@ -20,8 +20,6 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-var allowedDomains = []string{"www.naiin.com", "www.chulabook.com", "www.amazon.com"}
-
 func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreClient *minio.Client, dbClient *gorm.DB, seedURLs []string) error {
 	cleanupManager := utils.GetCleanupManager()
 
@@ -37,7 +35,7 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 	})
 
 	c := colly.NewCollector(
-		colly.AllowedDomains(allowedDomains...),
+		colly.AllowedDomains(config.GetAllowedDomains()...),
 		colly.Async(true),
 	)
 
@@ -65,7 +63,7 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 	})
 
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		if slices.Contains(allowedDomains, e.Request.URL.Host) {
+		if slices.Contains(config.GetAllowedDomains(), e.Request.URL.Host) {
 			err = q.AddURL(e.Request.AbsoluteURL(e.Attr("href")))
 			if err != nil {
 				log.Println("Error adding URL to queue:", err)
