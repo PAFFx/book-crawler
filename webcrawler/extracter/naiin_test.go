@@ -126,10 +126,10 @@ func TestNaiinExtracter_Extract(t *testing.T) {
 				t.Errorf("NaiinExtracter.Extract() error = %v", errr)
 			}
 
-			assert.NotEmpty(t, book.ProductURL.String())
-			assert.NotEmpty(t, book.ImageURL.String())
+			assert.NotEmpty(t, book.URL)
+			assert.NotEmpty(t, book.ImageURL)
 			assert.NotEmpty(t, book.Title)
-			assert.NotEmpty(t, book.Authors)
+			//			assert.NotEmpty(t, book.Authors)
 			assert.NotEmpty(t, book.ISBN)
 			assert.NotEmpty(t, book.Description)
 

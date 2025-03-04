@@ -2,6 +2,7 @@ package extracter
 
 import (
 	"book-search/webcrawler/models"
+	"book-search/webcrawler/utils"
 	"log"
 	"net/url"
 	"regexp"
@@ -81,11 +82,14 @@ func (b BooktopiaExtracter) Extract(html string) (*models.Book, error) {
 
 	description := strings.TrimSpace(doc.Find(BOOKTOPIA_DESCRIPTION_SELECTOR).Text())
 
+	contentHash := utils.GenerateContentHash(html)
+
 	return &models.Book{
-		ProductURL:  productUrl,
-		ImageURL:    imageUrl,
-		Title:       title,
-		Authors:     authors,
+		HTMLHash: contentHash,
+		URL:      productUrl.String(),
+		ImageURL: imageUrl.String(),
+		Title:    title,
+		//Authors:     authors,
 		ISBN:        isbn,
 		Description: description,
 	}, nil

@@ -2,7 +2,7 @@ package extracter
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 )
@@ -15,7 +15,7 @@ func TestExtract(t *testing.T) {
 	}
 	defer response.Body.Close()
 
-	html, err := ioutil.ReadAll(response.Body)
+	html, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatalf("Failed to read response body: %v", err)
 	}

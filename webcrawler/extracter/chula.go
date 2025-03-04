@@ -2,6 +2,7 @@ package extracter
 
 import (
 	"book-search/webcrawler/models"
+	"book-search/webcrawler/utils"
 	"net/url"
 	"strings"
 
@@ -44,10 +45,9 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 	// Extract authors
 	authors := strings.TrimSpace(doc.Find(".detail-author").Text())
 	authors = strings.Replace(authors, "ผู้แต่ง :", "", -1)
-	
+
 	// Extract ISBN
 	isbn := doc.Find("p:contains('ISBN :')").Text()
-
 
 	// Extract product URL
 	var productURL *url.URL
@@ -71,14 +71,17 @@ func (c ChulaExtracter) Extract(html string) (*models.Book, error) {
 		imageURL = parsedImageURL
 	}
 
+	contentHash := utils.GenerateContentHash(html)
+
 	// Create a new Book instance
 	book := &models.Book{
-		Title:       title,
-		Authors:     []string{authors},
+		HTMLHash: contentHash,
+		URL:      productURL.String(),
+		ImageURL: imageURL.String(),
+		Title:    title,
+		//		Authors:     []string{authors},
 		ISBN:        isbn,
 		Description: description,
-		ProductURL:  productURL,
-		ImageURL:    imageURL,
 	}
 
 	return book, nil
