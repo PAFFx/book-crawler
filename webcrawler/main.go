@@ -40,6 +40,7 @@ func main() {
 	seedURLs := []string{
 		"https://www.chulabook.com",
 		"https://www.naiin.com",
+		"https://www.booktopia.com.au/books/fiction/cF-p1.html",
 	}
 
 	err = crawler.Crawl(context.Background(), storageClient, htmlStoreClient, dbClient, seedURLs)
