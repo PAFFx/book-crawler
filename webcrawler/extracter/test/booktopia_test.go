@@ -1,7 +1,9 @@
-package extracter
+package extracter_test
 
 import (
 	"book-search/webcrawler/config"
+	"book-search/webcrawler/extracter"
+
 	// "encoding/json"
 	// "fmt"
 	"io"
@@ -72,7 +74,7 @@ func TestBooktopiaxtracter_IsValidBookPage(t *testing.T) {
 	client := http.Client{
 		Jar: jar,
 	}
-	b := BooktopiaExtracter{}
+	b := extracter.BooktopiaExtracter{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, tt.url, nil)
@@ -122,7 +124,7 @@ func TestBooktopiaExtracter_Extract(t *testing.T) {
 	client := http.Client{
 		Jar: jar,
 	}
-	b := BooktopiaExtracter{}
+	b := extracter.BooktopiaExtracter{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, tt.url, nil)
@@ -141,7 +143,8 @@ func TestBooktopiaExtracter_Extract(t *testing.T) {
 
 			// os.WriteFile(fmt.Sprintf("%s.html", tt.name), []byte(html), 0644)
 
-			book, errr := b.Extract(string(html))
+			bookWithAuthors, errr := b.Extract(string(html))
+			book := bookWithAuthors.Book
 			if errr != nil {
 				t.Errorf("NaiinExtracter.Extract() error = %v", errr)
 			}
@@ -149,7 +152,7 @@ func TestBooktopiaExtracter_Extract(t *testing.T) {
 			assert.NotEmpty(t, book.URL)
 			assert.NotEmpty(t, book.ImageURL)
 			assert.NotEmpty(t, book.Title)
-			//assert.NotEmpty(t, book.Authors)
+			assert.NotEmpty(t, bookWithAuthors.Authors)
 			assert.NotEmpty(t, book.ISBN)
 			assert.NotEmpty(t, book.Description)
 

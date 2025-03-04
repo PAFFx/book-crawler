@@ -1,9 +1,10 @@
-package extracter
+package extracter_test
 
 import (
 	// "encoding/json"
 	// "fmt"
 	"book-search/webcrawler/config"
+	"book-search/webcrawler/extracter"
 	"io"
 
 	"net/http"
@@ -52,7 +53,7 @@ func TestNaiinExtracter_IsValidBookPage(t *testing.T) {
 	client := http.Client{
 		Jar: jar,
 	}
-	a := NaiinExtracter{}
+	a := extracter.NaiinExtracter{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, tt.url, nil)
@@ -102,7 +103,7 @@ func TestNaiinExtracter_Extract(t *testing.T) {
 	client := http.Client{
 		Jar: jar,
 	}
-	a := NaiinExtracter{}
+	a := extracter.NaiinExtracter{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, tt.url, nil)
@@ -121,7 +122,8 @@ func TestNaiinExtracter_Extract(t *testing.T) {
 
 			// os.WriteFile(fmt.Sprintf("%s.html", tt.name), []byte(html), 0644)
 
-			book, errr := a.Extract(string(html))
+			bookWithAuthors, errr := a.Extract(string(html))
+			book := bookWithAuthors.Book
 			if errr != nil {
 				t.Errorf("NaiinExtracter.Extract() error = %v", errr)
 			}
@@ -129,7 +131,7 @@ func TestNaiinExtracter_Extract(t *testing.T) {
 			assert.NotEmpty(t, book.URL)
 			assert.NotEmpty(t, book.ImageURL)
 			assert.NotEmpty(t, book.Title)
-			//			assert.NotEmpty(t, book.Authors)
+			assert.NotEmpty(t, bookWithAuthors.Authors)
 			assert.NotEmpty(t, book.ISBN)
 			assert.NotEmpty(t, book.Description)
 

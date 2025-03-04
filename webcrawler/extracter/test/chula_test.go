@@ -1,6 +1,7 @@
-package extracter
+package extracter_test
 
 import (
+	"book-search/webcrawler/extracter"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,11 +21,12 @@ func TestExtract(t *testing.T) {
 		t.Fatalf("Failed to read response body: %v", err)
 	}
 
-	extracter := ChulaExtracter{}
+	extracter := extracter.ChulaExtracter{}
 	if !extracter.IsValidBookPage(url, string(html)) {
 		fmt.Println("Not a valid book page")
 	}
-	book, err := extracter.Extract(string(html))
+	bookWithAuthors, err := extracter.Extract(string(html))
+	book := bookWithAuthors.Book
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
