@@ -58,17 +58,20 @@ func initServices() (*redisstorage.Storage, *minio.Client, *gorm.DB, error) {
 		log.Fatal(err)
 	}
 	cleanupManager.Add(func() { storage.CloseStorageClient(storageClient) })
+	log.Println("Storage client init")
 
 	htmlStoreClient, err := htmlStore.GetMinioClient() // no need to cleanup
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("HTML store client init")
 
 	dbClient, err := database.GetDBClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 	cleanupManager.Add(func() { database.CloseDBClient(dbClient) })
+	log.Println("DB client init")
 
 	return storageClient, htmlStoreClient, dbClient, nil
 
