@@ -6,7 +6,7 @@ import (
 	"book-search/webcrawler/config"
 )
 
-func GetStorage() (*redisstorage.Storage, error) {
+func GetStorage(prefix string) (*redisstorage.Storage, error) {
 	env, err := config.GetEnv()
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func GetStorage() (*redisstorage.Storage, error) {
 		Address:  env.RedisHost,
 		Password: env.RedisPassword,
 		DB:       env.RedisDB,
-		Prefix:   "webcrawler:",
+		Prefix:   prefix,
 	}
 
 	return instance, nil
