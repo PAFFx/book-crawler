@@ -8,6 +8,7 @@ type Book struct {
 	Title       string // Title of the product
 	ISBN        string // ISBN of the product
 	Description string // Description of the product
+	IsIndexed   bool   `gorm:"default:false;not null"` // Whether the book has already been indexed
 }
 
 type Author struct {
