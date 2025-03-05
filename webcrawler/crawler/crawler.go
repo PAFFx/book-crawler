@@ -44,7 +44,7 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 	// Set domain-specific limits
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  domain,
-		Parallelism: 4, // Allow more parallelism since we're focused on one domain
+		Parallelism: 6, // Allow more parallelism since we're focused on one domain
 		RandomDelay: 5 * time.Second,
 		Delay:       1 * time.Second,
 	})

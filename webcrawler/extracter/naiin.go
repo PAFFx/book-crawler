@@ -41,17 +41,30 @@ func (n NaiinExtracter) Extract(html string) (*models.BookWithAuthors, error) {
 		return nil, err
 	}
 
-	productUrlStr := strings.TrimSpace(doc.Find(NAIIN_PRODUCT_URL_SELECTOR).First().AttrOr("content", ""))
-	productUrl, err := url.Parse(productUrlStr)
-	if err != nil {
-		return nil, err
+	// Safe function to parse URLs with error handling
+	safeParseURL := func(urlStr string) string {
+		if urlStr == "" {
+			return ""
+		}
+
+		// Remove any invalid control characters from URL
+		cleanUrlStr := strings.Map(func(r rune) rune {
+			if r < 32 || r == 127 { // ASCII control characters
+				return -1 // Drop the character
+			}
+			return r
+		}, urlStr)
+
+		parsed, err := url.Parse(cleanUrlStr)
+		if err != nil {
+			// Log the error but return a safe empty string
+			return ""
+		}
+		return parsed.String()
 	}
 
+	productUrlStr := strings.TrimSpace(doc.Find(NAIIN_PRODUCT_URL_SELECTOR).First().AttrOr("content", ""))
 	imageUrlStr := strings.TrimSpace(doc.Find(NAIIN_IMAGE_URL_SELECTOR).First().AttrOr("content", ""))
-	imageUrl, err := url.Parse(imageUrlStr)
-	if err != nil {
-		return nil, err
-	}
 
 	title := strings.TrimSpace(doc.Find(NAIIN_TITLE_SELECTOR).First().Text())
 	authors := []string{}
@@ -59,19 +72,21 @@ func (n NaiinExtracter) Extract(html string) (*models.BookWithAuthors, error) {
 		if strings.Contains(s.Text(), "ผู้เขียน:") {
 			for _, author := range strings.Split(s.Text(), ",") {
 				author = strings.TrimSpace(strings.Replace(author, "ผู้เขียน:", "", 1))
-				authors = append(authors, author)
+				if author != "" {
+					authors = append(authors, author)
+				}
 			}
 		}
 	})
 
 	isbn := strings.TrimSpace(doc.Find(NAIIN_ISBN_SELECTOR).First().AttrOr("content", ""))
-
 	description := strings.TrimSpace(doc.Find(NAIIN_DESCRIPTION_SELECTOR).First().Text())
 
+	// Create book with sanitized URLs
 	book := &models.Book{
 		HTMLHash:    utils.GenerateContentHash(html),
-		URL:         productUrl.String(),
-		ImageURL:    imageUrl.String(),
+		URL:         safeParseURL(productUrlStr),
+		ImageURL:    safeParseURL(imageUrlStr),
 		Title:       title,
 		ISBN:        isbn,
 		Description: description,

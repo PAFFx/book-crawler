@@ -26,9 +26,16 @@ func main() {
 
 	// Default seed URLs map - each domain has its own seed URLs
 	seedURLMap := map[string][]string{
-		"www.chulabook.com":    {"https://www.chulabook.com"},
-		"www.naiin.com":        {"https://www.naiin.com"},
-		"www.booktopia.com.au": {"https://www.booktopia.com.au/books/fiction/cF-p1.html"},
+		"www.chulabook.com": {"https://www.chulabook.com"},
+		"www.naiin.com":     {"https://www.naiin.com"},
+		"www.booktopia.com.au": {
+			"https://www.booktopia.com.au/books/fiction/cF-p1.html",
+			"https://www.booktopia.com.au/ebooks/fiction/cF-p1-e.html",
+			"https://www.booktopia.com.au/books/non-fiction/cN-p1.html",
+			"https://www.booktopia.com.au/ebooks/non-fiction/cN-p1-e.html",
+			"https://www.booktopia.com.au/books/text-books/higher-education-vocational-textbooks/cXA-p1.html",
+			"https://www.booktopia.com.au/ebooks/non-fiction/accounting-finance/l101082-p1-e.html?cID=KF&sorter=bestsellers-dsc",
+		},
 	}
 
 	// Initialize shared services
