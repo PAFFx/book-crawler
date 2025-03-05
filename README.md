@@ -14,6 +14,8 @@ MINIO_ENDPOINT=localhost:9000
 MINIO_ACCESS_KEY=<your-access-key>
 MINIO_SECRET_KEY=<your-secret-key>
 MINIO_BUCKET=html
+
+POSTGRES_DSN='host=localhost user=admin password=1q2w3e4r dbname=book_search port=5432 sslmode=disable TimeZone=Asia/Shanghai'
 ```
 
 ### Run

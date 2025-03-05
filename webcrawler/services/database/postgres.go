@@ -1,6 +1,7 @@
 package database
 
 import (
+	"book-search/webcrawler/config"
 	"book-search/webcrawler/models"
 
 	"gorm.io/driver/postgres"
@@ -9,9 +10,13 @@ import (
 )
 
 func GetDBClient() (*gorm.DB, error) {
-	dsn := "host=localhost user=admin password=1q2w3e4r dbname=book_search port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	env, err := config.GetEnv()
+	if err != nil {
+		return nil, err
+	}
 
-	var err error
+	dsn := env.PostgresDSN
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
