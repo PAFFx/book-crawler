@@ -2,14 +2,9 @@ package crawler
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"slices"
 	"time"
-
-	"github.com/gocolly/colly"
-	"github.com/gocolly/colly/queue"
-	"github.com/gocolly/redisstorage"
-	"gorm.io/gorm"
 
 	"book-search/webcrawler/config"
 	"book-search/webcrawler/extracter"
@@ -17,34 +12,39 @@ import (
 	"book-search/webcrawler/services/htmlStore"
 	"book-search/webcrawler/utils"
 
+	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/queue"
+	"github.com/gocolly/redisstorage"
 	"github.com/minio/minio-go/v7"
+	"gorm.io/gorm"
 )
 
-func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreClient *minio.Client, dbClient *gorm.DB, seedURLs []string) error {
-	cleanupManager := utils.GetCleanupManager()
+func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreClient *minio.Client, dbClient *gorm.DB, seedURLs []string, allowedDomains []string) error {
+	if len(allowedDomains) == 0 {
+		return fmt.Errorf("no allowed domains specified")
+	}
 
-	// get and check env
+	domain := allowedDomains[0]
+	// Get a progress tracker for this domain
+	tracker := GetProgressManager().GetTracker(domain)
+
 	env, err := config.GetEnv()
 	if err != nil {
 		return err
 	}
 
-	bar := NewCrawlerProgressBar()
-	_ = bar.Add(0)
-	cleanupManager.Add(func() {
-		bar.Finish()
-	})
-
+	// Create a collector with async mode enabled
 	c := colly.NewCollector(
-		colly.AllowedDomains(config.GetAllowedDomains()...),
 		colly.Async(true),
+		colly.AllowedDomains(allowedDomains...),
 	)
 
 	c.SetRequestTimeout(30 * time.Second)
 
+	// Set domain-specific limits
 	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",
-		Parallelism: 6, // Concurrent request limit is not the same as the number of crawler consumer threads
+		DomainGlob:  domain,
+		Parallelism: 4, // Allow more parallelism since we're focused on one domain
 		RandomDelay: 5 * time.Second,
 		Delay:       1 * time.Second,
 	})
@@ -54,17 +54,20 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 		return err
 	}
 
+	// Set up the queue
 	q, err := queue.New(env.CrawlerThreads, storageClient)
 	if err != nil {
 		return err
 	}
 
+	// Set up request handlers
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("User-Agent", config.GetRandomUserAgents())
 	})
 
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		if slices.Contains(config.GetAllowedDomains(), e.Request.URL.Host) {
+		// Only follow links to the same domain (we're focusing on one domain per crawler)
+		if e.Request.URL.Host == domain {
 			err = q.AddURL(e.Request.AbsoluteURL(e.Attr("href")))
 			if err != nil {
 				log.Println("Error adding URL to queue:", err)
@@ -73,22 +76,26 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		if r.StatusCode == 200 {
-			bar.AddDetail("Visited: " + r.Request.URL.String())
-			e := extracter.GetExtracter(r.Request.URL.Host)
-			if e != nil && e.IsValidBookPage(r.Request.URL.String(), string(r.Body)) {
+		// Get a URL from the response
+		urlStr := r.Request.URL.String()
 
+		// Only track non-redirects (status 200)
+		if r.StatusCode == 200 {
+			// Track this page visit
+			tracker.LogVisit(urlStr)
+
+			e := extracter.GetExtracter(r.Request.URL.Host)
+			if e != nil && e.IsValidBookPage(urlStr, string(r.Body)) {
 				contentHash := utils.GenerateContentHash(string(r.Body))
 
 				exists, err := database.CheckBookExists(dbClient, contentHash)
 				if err != nil {
 					log.Println("Error checking if book exists:", err)
 				}
-				if !exists {
 
-					const maxURLLength = 50
-					_ = bar.Add(1)
-					bar.Describe("Crawled site: " + truncateString(r.Request.URL.String(), maxURLLength))
+				if !exists {
+					// Log book extraction in our tracker
+					tracker.LogExtraction(urlStr)
 
 					bookWithAuthors, err := e.Extract(string(r.Body))
 					if err != nil {
@@ -105,7 +112,7 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 
 					err = htmlStore.StoreHTML(ctx, htmlStoreClient, string(r.Body), contentHash)
 					if err != nil {
-						log.Printf("Error storing HTML (URL: %s): %v\n", r.Request.URL.String(), err)
+						log.Printf("Error storing HTML (URL: %s): %v\n", urlStr, err)
 					}
 				}
 			}
@@ -118,23 +125,29 @@ func Crawl(ctx context.Context, storageClient *redisstorage.Storage, htmlStoreCl
 		}
 	})
 
+	// Add the seed URLs to the queue
 	for _, url := range seedURLs {
 		if err = q.AddURL(url); err != nil {
 			return err
 		}
 	}
 
+	// Process the queue until it's empty
 	for {
-		// Handle the queue with async requests,
-		// wait for all requests to complete and check if the queue is empty
+		// Run the queue with the async collector
 		if err = q.Run(c); err != nil {
 			return err
 		}
+
+		// Wait for all pending requests to complete before checking if queue is empty
 		c.Wait()
+
 		if q.IsEmpty() {
-			log.Println("Crawl completed, queue is empty")
 			break
 		}
+
+		// Small sleep to avoid CPU spinning
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	return nil
