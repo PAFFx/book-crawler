@@ -1,6 +1,4 @@
-# book-search
-
-## Web Crawler
+# book-crawler
 
 ### Environment Variables
 ```
@@ -19,6 +17,12 @@ POSTGRES_DSN='host=localhost user=admin password=1q2w3e4r dbname=book_search por
 ```
 
 ### Run
+Setup minIO, redis and postgreSQL with compose.
+```
+docker-compose up -d
+```
+
+Run
 ```
 go mod tidy
 go run webcrawler/main.go
